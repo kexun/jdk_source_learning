@@ -9,6 +9,11 @@ default void remove()：这里涉及到了jdk8的特性，在接口定义中，�
 default void forEachRemaining(Consumer<? super E> action)：这个方面一般都用不到，不做具体描述。
 
 ##### 2. ListIterator
-ListIterator 是对Iterator的扩展，他增加了boolean hasPrevious()，E previous()，int previousIndex()，void set(E e)，oid add(E e) 5个方法。通过前3个方法可以进行向前遍历元素，后面两个set和add 可以插入元素，但是set是将元素插入到链表的最后位置，add是插入到当前返回的元素之前。
+ListIterator 是对Iterator的扩展，他增加了
+boolean hasPrevious()，
+E previous()，
+int previousIndex()，
+void set(E e)，
+void add(E e) 5个方法。通过前3个方法可以进行向前遍历元素，后面两个set和add 可以插入元素，但是set是将元素插入到链表的最后位置，add是插入到当前返回的元素之前。
 
 以上两个接口的具体实现会在后面的子类中有所描述。
