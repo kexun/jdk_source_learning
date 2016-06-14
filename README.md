@@ -7,6 +7,6 @@ jdk源码学习笔记，人话翻译
 上图为java集合类的集合框架图，图中非常清楚的展示了java集合类中的各种依赖继承关系。所有的元素都实现了Iterator接口，用于遍历集合元素。集合分两大类，Collection和Map，Collection中又分List和Set，Map接口下有HashMap，Hashtable,TreeMap等。顾名思义这些不同的子类都有对应不同的含义，本文要详细讲述的就是不同子类的具体实现，以及子类之间的异同点。
 
 
-1. Iterator LinkIterator
-2. Collection List Set Queue
-3. Map AbstractMap SortedMap
+1. [Iterator](/src/Iterator.md)
+2. Collection
+3. Map
