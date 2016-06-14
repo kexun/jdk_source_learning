@@ -9,7 +9,7 @@ default void remove()：这里涉及到了jdk8的特性，在接口定义中，�
 default void forEachRemaining(Consumer<? super E> action)：这个方面一般都用不到，不做具体描述。
 
 ##### 2. ListIterator
-ListIterator 是对Iterator的扩展，他增加了
+ListIterator 是对Iterator的扩展，他增加了  
 boolean hasPrevious()，
 E previous()，
 int previousIndex()，
