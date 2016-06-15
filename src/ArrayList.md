@@ -39,55 +39,58 @@ ArrayList是List的实现类，可以说是最重用的一个容器之一。他�
     }
 ```
 这三个方法都是ArrayList的构造方法，从前两个方法中可以看出初始化ArrayList的时候是如何指定容器初始大小的，这里也无需多言了。那么我们再看看，当容量达到上限的时候，是如何动态扩充数组大小的呢。  
-```
-        public boolean add(E e) {
-        	// 每次添加元素之前先动态调整数组大小，避免溢出
-            ensureCapacityInternal(size + 1);
-            // 为什么ArrayList的元素都是顺序存放的？这就是原因，每次都会把最新添加的元素放到数组末尾。
-            elementData[size++] = e;
-            return true;
-        }
-        
-        private void ensureCapacityInternal(int minCapacity) {
-        	// 如果当前容器为空，那么就先初始化数组，数组大小不能小于DEFAULT_CAPACITY
-            if (elementData == EMPTY_ELEMENTDATA) {
-                minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
-            }
-
-            ensureExplicitCapacity(minCapacity);
-        }
-
-        private void ensureExplicitCapacity(int minCapacity) {
-            modCount++;
-
-            // 容器会在什么时候扩容？ 就是他了！ 如果当前元素数量达到了容器的上限，那么就扩充数组
-            if (minCapacity - elementData.length > 0)
-                grow(minCapacity);
-        }
-        private void grow(int minCapacity) {
-            // oldCapacity为当前容器大小
-            int oldCapacity = elementData.length;
-            // oldCapacity >> 1和oldCapacity / 2是等效的，因此newCapacity为原来的1.5倍
-            int newCapacity = oldCapacity + (oldCapacity >> 1);
-            // 因为第一次容器有可能为空，elementData.length==0，newCapacity会小于minCapacity
-            if (newCapacity - minCapacity < 0)
-                newCapacity = minCapacity;
-            // 当然newCapacity也不能大于MAX_ARRAY_SIZE，因为数组能分配的最大空间就是Integer.MAX_VALUE
-            if (newCapacity - MAX_ARRAY_SIZE > 0)
-                newCapacity = hugeCapacity(minCapacity);
-            // 当确定好数组大小后，就可以进行数组拷贝，Arrays.copyOf的底层是一个native方法，后续有机会会讲到他的实现。
-            elementData = Arrays.copyOf(elementData, newCapacity);
-        }
-
-        private static int hugeCapacity(int minCapacity) {
-            if (minCapacity < 0) // overflow
-                throw new OutOfMemoryError();
-            return (minCapacity > MAX_ARRAY_SIZE) ?
-                Integer.MAX_VALUE :
-                MAX_ARRAY_SIZE;
-        }
 
 ```
+public boolean add(E e) {
+    // 每次添加元素之前先动态调整数组大小，避免溢出
+    ensureCapacityInternal(size + 1);
+    // 为什么ArrayList的元素都是顺序存放的？这就是原因，每次都会把最新添加的元素放到数组末尾。
+    elementData[size++] = e;
+    return true;
+}
+
+private void ensureCapacityInternal(int minCapacity) {
+    // 如果当前容器为空，那么就先初始化数组，数组大小不能小于DEFAULT_CAPACITY
+    if (elementData == EMPTY_ELEMENTDATA) {
+        minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+
+    ensureExplicitCapacity(minCapacity);
+}
+
+private void ensureExplicitCapacity(int minCapacity) {
+    modCount++;
+
+    // 容器会在什么时候扩容？ 就是他了！ 如果当前元素数量达到了容器的上限，那么就扩充数组
+    if (minCapacity - elementData.length > 0)
+        grow(minCapacity);
+}
+
+private void grow(int minCapacity) {
+    // oldCapacity为当前容器大小
+    int oldCapacity = elementData.length;
+    // oldCapacity >> 1和oldCapacity / 2是等效的，因此newCapacity为原来的1.5倍
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    // 因为第一次容器有可能为空，elementData.length==0，newCapacity会小于minCapacity
+    if (newCapacity - minCapacity < 0)
+        newCapacity = minCapacity;
+    // 当然newCapacity也不能大于MAX_ARRAY_SIZE，因为数组能分配的最大空间就是Integer.MAX_VALUE
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    // 当确定好数组大小后，就可以进行数组拷贝，Arrays.copyOf的底层是一个native方法，后续有机会会讲到他的实现。
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+
+private static int hugeCapacity(int minCapacity) {
+    if (minCapacity < 0) // overflow
+        throw new OutOfMemoryError();
+    return (minCapacity > MAX_ARRAY_SIZE) ?
+        Integer.MAX_VALUE :
+        MAX_ARRAY_SIZE;
+}
+```
+以上就是ArrayList实现动态扩容的原理。那么我有一个问题，当容器满了以后需要扩容，那当容器元素不做1/2的时候是否需要动态减容呢？
+
 
 
 
