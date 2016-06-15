@@ -10,3 +10,4 @@ jdk源码学习笔记，人话翻译
 1. [Iterator](/src/Iterator.md)
 2. [Collection](/src/Collection.md)
 3. [Map](/src/Map.md)
+4. [ArrayList](/src/ArrayList.md)
