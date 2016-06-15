@@ -89,7 +89,7 @@ private static int hugeCapacity(int minCapacity) {
         MAX_ARRAY_SIZE;
 }
 ```
-以上就是ArrayList实现动态扩容的原理。那么我有一个问题，当容器满了以后需要扩容，那当容器元素不足1/2的时候是否需要动态减容呢？
+以上就是ArrayList实现动态扩容的原理。那么我有一个问题，当容器满了以后需要扩容，那当容器元素不足1/2或者更少的时候是否需要动态减容呢？
 
 
 
