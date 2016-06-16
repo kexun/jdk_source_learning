@@ -134,7 +134,8 @@ List<Integer> list1 = new ArrayList<Integer>(1);
 1.add方法：  
 ```
 public boolean add(E e) {
-    ensureCapacityInternal(size + 1);  // Increments modCount!!
+	// 检查扩容
+    ensureCapacityInternal(size + 1);
     elementData[size++] = e;
     return true;
 }
@@ -142,7 +143,7 @@ public boolean add(E e) {
 public void add(int index, E element) {
     rangeCheckForAdd(index);
 
-    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    ensureCapacityInternal(size + 1);
     System.arraycopy(elementData, index, elementData, index + 1,
                      size - index);
     elementData[index] = element;
@@ -152,7 +153,7 @@ public void add(int index, E element) {
 public boolean addAll(Collection<? extends E> c) {
     Object[] a = c.toArray();
     int numNew = a.length;
-    ensureCapacityInternal(size + numNew);  // Increments modCount
+    ensureCapacityInternal(size + numNew);
     System.arraycopy(a, 0, elementData, size, numNew);
     size += numNew;
     return numNew != 0;
@@ -163,7 +164,7 @@ public boolean addAll(int index, Collection<? extends E> c) {
 
     Object[] a = c.toArray();
     int numNew = a.length;
-    ensureCapacityInternal(size + numNew);  // Increments modCount
+    ensureCapacityInternal(size + numNew);
 
     int numMoved = size - index;
     if (numMoved > 0)
@@ -175,13 +176,113 @@ public boolean addAll(int index, Collection<? extends E> c) {
     return numNew != 0;
 }
 ```
-这里给出了四种add方法，第一种添加到数组末尾，第二种方法添加到指定位置。添加元素的时候，首先都要检查扩容，而add(int index, E element)方法中多一步操作，就是将指定位置以后的所有元素向后移动一位，留出当前位置用来存放添加的元素。后面两张addAll方法原理和前两种一样，无非他是添加一个元素集合。
+这里给出了四种add方法，add(E e)添加到数组末尾，add(int index, E element)添加到指定位置。添加元素的时候，首先都要检查扩容，而add(int index, E element)方法中多一步操作，就是将指定位置以后的所有元素向后移动一位，留出当前位置用来存放添加的元素。后面两种addAll方法原理和前两种一样，无非他是添加一个集合元素的区别。  
 
+2.set方法：  
+```
+public E set(int index, E element) {
+    rangeCheck(index);
+    E oldValue = elementData(index);
+    elementData[index] = element;
+    return oldValue;
+}
+```
+set和add的区别就是，add是添加一个元素，而set是替换元素，size不变。
 
+#####三、删除元素
+remove方法和add方法类似，也是对数组的一系列组合操作。删除也分为对单个元素的删除和集合删除。下面就分别来看看这两类方法的具体实现。  
 
+1.remove单个元素：  
+```
+public E remove(int index) {
+    rangeCheck(index);
+    modCount++;
+    E oldValue = elementData(index);
+    int numMoved = size - index - 1;
+    if (numMoved > 0)
+    	// 直接进行数组拷贝操作，把index后的所有元素向前移动一位。
+        System.arraycopy(elementData, index+1, elementData, index,
+                         numMoved);
+    elementData[--size] = null; // 把元素设空，等待垃圾回收
 
+    return oldValue;
+}
 
+public boolean remove(Object o) {
+    if (o == null) {
+        for (int index = 0; index < size; index++)
+            if (elementData[index] == null) {
+                fastRemove(index);
+                return true;
+            }
+    } else {
+        for (int index = 0; index < size; index++)
+            if (o.equals(elementData[index])) {
+                fastRemove(index);
+                return true;
+            }
+    }
+    return false;
+}
 
+// 之所以叫做快速删除，是因为他被设置为一个私有方法，只能在内部调用，删除元素的时候，省去了数组越界的判断。也不返回被删除的元素，直接进行数组拷贝操作。
+private void fastRemove(int index) {
+    modCount++;
+    int numMoved = size - index - 1;
+    if (numMoved > 0)
+        System.arraycopy(elementData, index+1, elementData, index,
+                         numMoved);
+    elementData[--size] = null;
+}
+```
+2.删除集合元素  
+removeAll和remove方法思想也是类似的，但是这里有个细节我认为作者处理的非常妙，有必要拿出来品味一下。那么妙在哪里呢？原来这里有两个方法removeAll和retainAll他们正好是互斥的两个操作，但是底层都调用了同一个方法来实现，请看！  
+```
+// 删除包含集合C的元素
+public boolean removeAll(Collection<?> c) {
+    Objects.requireNonNull(c);
+    return batchRemove(c, false);
+}
+
+// 除了包含集合C的元素外，一律被删除。也就是说，最后只剩下c中的元素。
+public boolean retainAll(Collection<?> c) {
+    Objects.requireNonNull(c);
+    return batchRemove(c, true);
+}
+
+private boolean batchRemove(Collection<?> c, boolean complement) {
+    final Object[] elementData = this.elementData;
+    int r = 0, w = 0;
+    boolean modified = false;
+    try {
+        for (; r < size; r++)
+        	// 我认为这里有两点值得我们学习
+            // 第一，作者巧妙的提取了逻辑上的最大公约数，仅通过一行逻辑判断就实现了两个互斥的效果。
+            // 第二，作者的所用操作都集中于elementData一个数组上，避免了资源的浪费。
+            if (c.contains(elementData[r]) == complement)
+                elementData[w++] = elementData[r];
+    } finally {
+        // 理论上r==size 只有当出现异常情况的时候，才会出现r!=size，一旦出现了异常，
+        // 那么务必要将之前被修改过的数组再还原回来。
+        if (r != size) {
+            System.arraycopy(elementData, r,
+                             elementData, w,
+                             size - r);
+            w += size - r;
+        }
+        if (w != size) {
+            // 被删除部分数组后，剩余的所有元素被移到了0-w之间的位置，w位置以后的元素都被置空回收。
+            for (int i = w; i < size; i++)
+                elementData[i] = null;
+            modCount += size - w;
+            size = w;
+            modified = true;
+        }
+    }
+    return modified;
+}
+```
+==当我读到这段代码的时候，我忍不住赞叹，代码之美，美在逻辑的严谨，美在逻辑的简约，也终于明白了，何为对称美。==
 
 
 
