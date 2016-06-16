@@ -378,6 +378,12 @@ public void add(E e) {
 }
 ```
 #####五、子集操作
+```
+public List<E> subList(int fromIndex, int toIndex) {
+    subListRangeCheck(fromIndex, toIndex, size);
+    return new SubList(this, 0, fromIndex, toIndex);
+}
+```
 这里指的子集，就是指定list的起始位置和结束位置，获取这段范围内的集合元素。那么这有什么作用呢？当单独获取了这段子集以后，就可以独立的对待他，他的起始元素将从0开始。那么这是怎么实现的呢？原来他是通过维护一个SubList内部类，每次读取元素的时候，配合一个offset偏移量，精确的找到elementData数组中对应位置的元素了。由于代码量过多，我这里就象征性的展示其中的一个get方法。  
 ```
 public E get(int index) {
