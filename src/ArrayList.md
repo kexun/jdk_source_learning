@@ -2,7 +2,7 @@
 
 ArrayList是List的实现类，可以说是最重用的一个容器之一。他之所以被频繁的使用，必然有其优势之处。下面就来讲讲ArrayList的几个优点：
 
-1. 动态扩容
+#####一. 动态扩容
 首先来谈谈ArrayList的数据是如何存储的，他的底层其实就是封装了一个Array数组，数组的类型为Object。  
 ```
     private static final int DEFAULT_CAPACITY = 10;
