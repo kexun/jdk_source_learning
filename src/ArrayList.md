@@ -2,7 +2,7 @@
 
 ArrayList是List的实现类，可以说是最重用的一个容器之一。他之所以被频繁的使用，必然有其优势之处。下面就来讲讲ArrayList的几个优点：
 
-#####一. 动态扩容
+#####一、 动态扩容
 首先来谈谈ArrayList的数据是如何存储的，他的底层其实就是封装了一个Array数组，数组的类型为Object。  
 ```
     private static final int DEFAULT_CAPACITY = 10;
@@ -91,13 +91,37 @@ private static int hugeCapacity(int minCapacity) {
 ```
 以上就是ArrayList实现动态扩容的原理。那么我有一个问题，当容器满了以后需要扩容，那当容器元素不足1/2或者更少的时候是否需要动态减容呢？
 
+#####验证：
+下面写了若干测试代码，分别给出了3中情况，创建的时候设定容器大小和使用默认大小，然后通过逐个增加元素，观察数组大小变化。
+```
+List<Integer> list1 = new ArrayList<Integer>(1);
+    list1.add(1);
+    list1.add(2);
 
+    List<Integer> list2 = new ArrayList<Integer>();
+    list2.add(1);
 
-
-
-
-
-
+    List<Integer> list3 = new ArrayList<Integer>(11);
+    for (int i = 0; i < 11; i++) {
+        list3.add(i);
+    }
+    list3.add(22);
+    
+    for (int i = 11; i > 0; i--) {
+        list3.remove(i);
+    }
+```
+![](/img/2.png)  
+![](/img/3.png)  
+第一种情况，默认创建一个大小为1的容器，数组大小就是1。
+![](/img/4.png)  
+第二种情况，创建一个默认大小的容器，则数组大小为10。
+![](/img/5.png)  
+第三种情况，创建一个大小为11的容器，则数组大小为11。
+![](/img/6.png)  
+第三种情况下，向容器中添加元素，当添加到第12个的时候，数组动态扩容到16，正好符合之前描述的，扩容1.5倍的说法。
+![](/img/7.png)![](/img/8.png)  
+第三种情况下，删除容器中的元素，数组大小并不会因此而减小。
 
 
 
