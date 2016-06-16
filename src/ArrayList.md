@@ -128,6 +128,54 @@ List<Integer> list1 = new ArrayList<Integer>(1);
 ![](/img/7.png)![]  
 (/img/8.png)  
 
+#####二、添加元素
+其实ArrayList的add，set方法都非常简单。一句话概括，就是对数组元素的操作。  
+
+1.add方法：  
+```
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    elementData[size++] = e;
+    return true;
+}
+
+public void add(int index, E element) {
+    rangeCheckForAdd(index);
+
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    System.arraycopy(elementData, index, elementData, index + 1,
+                     size - index);
+    elementData[index] = element;
+    size++;
+}
+
+public boolean addAll(Collection<? extends E> c) {
+    Object[] a = c.toArray();
+    int numNew = a.length;
+    ensureCapacityInternal(size + numNew);  // Increments modCount
+    System.arraycopy(a, 0, elementData, size, numNew);
+    size += numNew;
+    return numNew != 0;
+}
+
+public boolean addAll(int index, Collection<? extends E> c) {
+    rangeCheckForAdd(index);
+
+    Object[] a = c.toArray();
+    int numNew = a.length;
+    ensureCapacityInternal(size + numNew);  // Increments modCount
+
+    int numMoved = size - index;
+    if (numMoved > 0)
+        System.arraycopy(elementData, index, elementData, index + numNew,
+                         numMoved);
+
+    System.arraycopy(a, 0, elementData, index, numNew);
+    size += numNew;
+    return numNew != 0;
+}
+```
+这里给出了四种add方法，第一种添加到数组末尾，第二种方法添加到指定位置。添加元素的时候，首先都要检查扩容，而add(int index, E element)方法中多一步操作，就是将指定位置以后的所有元素向后移动一位，留出当前位置用来存放添加的元素。后面两张addAll方法原理和前两种一样，无非他是添加一个元素集合。
 
 
 
