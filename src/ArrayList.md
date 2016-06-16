@@ -282,7 +282,7 @@ private boolean batchRemove(Collection<?> c, boolean complement) {
     return modified;
 }
 ```
-==当我读到这段代码的时候，我忍不住赞叹，代码之美，美在逻辑的严谨，美在逻辑的简约，也终于明白了，何为对称美。==
+当我读到这段代码的时候，我忍不住赞叹，代码之美，美在逻辑的严谨，美在逻辑的简约，也终于明白了，何为对称美。
 
 
 
