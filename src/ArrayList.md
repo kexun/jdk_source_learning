@@ -283,9 +283,110 @@ private boolean batchRemove(Collection<?> c, boolean complement) {
 }
 ```
 当我读到这段代码的时候，我忍不住赞叹，代码之美，美在逻辑的严谨，美在逻辑的简约，也终于明白了，何为对称美。
+#####四、迭代器
+在java集合类中，所有的集合都实现了Iterator接口，而List接口同时实现了ListIterator接口，这就决定了ArrayList他同时拥有两种迭代遍历的基因--Itr和ListItr。  
 
+1.Itr  
+Itr实现的是Iterator接口，拥有对元素向后遍历的能力
+```
+int cursor;       // 指向下一个返回的元素
+int lastRet = -1; // 指向在遍历过程中，最后返回的那个元素。 如果没有为-1。
 
+public E next() {
+    checkForComodification();
+    int i = cursor;
+    if (i >= size)
+        throw new NoSuchElementException();
+    Object[] elementData = ArrayList.this.elementData;
+    if (i >= elementData.length)
+        throw new ConcurrentModificationException();
+    // 指向下一个元素
+    cursor = i + 1;
+    // 返回当前元素，并把lastRet指向当前这个元素
+    return (E) elementData[lastRet = i];
+}
 
+// 此处有坑，调用此方法前，必须调用next方法，从lastRet可以看出，如果当前没有调用next，那么lastRet==-1
+public void remove() {
+    if (lastRet < 0)
+        throw new IllegalStateException();
+    checkForComodification();
+
+    try {
+        ArrayList.this.remove(lastRet);
+        cursor = lastRet;
+        lastRet = -1;
+        expectedModCount = modCount;
+    } catch (IndexOutOfBoundsException ex) {
+        throw new ConcurrentModificationException();
+    }
+}
+```
+
+2.ListItr  
+ListItr不但继承了Itr类，也实现了ListIterator接口，因此他拥有双向遍历的能力。这里着重介绍一下向前遍历的原理。  
+```
+public boolean hasPrevious() {
+    return cursor != 0;
+}
+
+public int previousIndex() {
+	// 通过cursor-1，将指针向前移位。
+    return cursor - 1;
+}
+
+public E previous() {
+    checkForComodification();
+    int i = cursor - 1;
+    if (i < 0)
+        throw new NoSuchElementException();
+    Object[] elementData = ArrayList.this.elementData;
+    if (i >= elementData.length)
+        throw new ConcurrentModificationException();
+    cursor = i;
+    return (E) elementData[lastRet = i];
+}
+```
+ListItr同时增加了set和add两个方法  
+```
+// 替换当前遍历到的元素
+public void set(E e) {
+    if (lastRet < 0)
+        throw new IllegalStateException();
+    checkForComodification();
+
+    try {
+        ArrayList.this.set(lastRet, e);
+    } catch (IndexOutOfBoundsException ex) {
+        throw new ConcurrentModificationException();
+    }
+}
+
+// 添加一个元素到当前遍历到的位置
+public void add(E e) {
+    checkForComodification();
+
+    try {
+        int i = cursor;
+        ArrayList.this.add(i, e);
+        cursor = i + 1;
+        lastRet = -1;
+        expectedModCount = modCount;
+    } catch (IndexOutOfBoundsException ex) {
+        throw new ConcurrentModificationException();
+    }
+}
+```
+#####五、子集操作
+这里指的子集，就是指定list的起始位置和结束位置，获取这段范围内的集合元素。那么这有什么作用呢？当单独获取了这段子集以后，就可以独立的对待他，他的起始元素将从0开始。那么这是怎么实现的呢？原来他是通过维护一个SubList内部类，每次读取元素的时候，配合一个offset偏移量，精确的找到elementData数组中对应位置的元素了。由于代码量过多，我这里就象征性的展示其中的一个get方法。  
+```
+public E get(int index) {
+    rangeCheck(index);
+    checkForComodification();
+    // 子集中的位置+偏移量==实际数组中的位置
+    return ArrayList.this.elementData(offset + index);
+}
+```
 
 
 
