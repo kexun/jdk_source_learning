@@ -1,5 +1,48 @@
-#ArrayList
+#ArrayList & Vector
 
+#####前言:
+本来按照计划，ArrayList和Vector是分开讲的，但是当我阅读了ArrayList和Vector的源码以后，我就改变了注意，把两个类合起来讲或许更加适合。为什么呢？我有几个理由。  
+1. ArrayList和Vector都是List的实现类，他两处于同一个地位上的。他们所实现的功能大同小异，源码相似度90%以上。  
+2. 他俩的区别，ArrayList是非线程安全，而Vector是线程安全的，那么表现在源码上是怎么样的区别呢？就是在每个ArrayList的方法前，加上synchronized。哈哈，不相信？直接上代码  
+
+```
+// Vector的add方法
+public synchronized boolean add(E e) {
+    modCount++;
+    ensureCapacityHelper(elementCount + 1);
+    elementData[elementCount++] = e;
+    return true;
+}
+
+// ArrayList的add方法
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);
+    elementData[size++] = e;
+    return true;
+}
+```
+3.他俩都实现了Iterator和LinkIterator接口，具有相同的遍历方式。  
+4.ArrayList和Vector都具有动态扩容的特性，唯一的区别是，ArrayList扩容后是原来的1.5倍。Vector中有一个capacityIncrement变量，每次扩容都在原来大小基础上增加capacityIncrement。如果capacityIncrement==0，那么就在原大小基础上再扩充一倍。  
+5.Vector中有一个方法setSize(int newSize)，而ArrayList并没有，我觉得这个方法有点鸡肋。setSize允许用户主动设置容器大小，如果newSize小于当前size，那么elementData数组中只会保留newSize个元素，多出来的会设为null。如果newSize大于当前size，那么就扩容到newSize大小，数组中多出来的部分设为null，以后添加元素的时候，之前多出来的部分就会以null的形式存在，直接试验一下吧  
+```
+Vector<Integer> v2 = new Vector<Integer>();
+    v2.add(1);
+    v2.setSize(3);
+    v2.add(3);
+    System.out.println(v2.size());
+    
+    setSize之前：
+    [1]
+    setSize之后：
+    [1, null, null]
+    当我再次添加一个元素后：
+    [1, null, null, 3]
+    所以我觉得这个方法并没有太大实用意义。而且会是用户困惑，出现一些不必要的错误。
+    
+```
+6.因为Vector是同步的，所以性能上肯定不如ArrayList，所以在不需要考虑多线程的环境下，建议使用ArrayList。  
+
+既然上面我讲了这么多Vector和ArrayList的异同点，而且两个类的实现基本一致，那么下面我就已ArrayList为例子来进行讲解，Vector部分就不再赘述。
 ArrayList是List的实现类，可以说是最重用的一个容器之一。他之所以被频繁的使用，必然有其优势之处。下面就来讲讲ArrayList的几个优点：
 
 #####一、 动态扩容
@@ -394,8 +437,82 @@ public E get(int index) {
 }
 ```
 
+#####六、ArrayList和Vector在多线程环境下对比。
+1.测试代码  
+```
+public static void ArrayListVectorTest() {
+    final List<Integer> list = new ArrayList<Integer>(11);
 
+    final Vector<Integer> vector = new Vector<>();
 
+    Runnable listrun = new Runnable() {
+
+        @Override
+        public void run() {
+            for (int i =0; i<5; i++) {
+                list.add(i);
+                System.out.println("list size = "+list.size());
+            }
+        }
+    };
+
+    Runnable vectorrun = new Runnable() {
+
+        @Override
+        public void run() {
+            for (int i =0; i<5; i++) {
+                vector.add(i);
+                System.out.println("vectorrun size = "+vector.size());
+            }
+        }
+    };
+
+    new Thread(listrun).start();
+    new Thread(listrun).start();
+    new Thread(listrun).start();
+
+    new Thread(vectorrun).start();
+    new Thread(vectorrun).start();
+    new Thread(vectorrun).start();
+
+}
+```
+
+```
+list size = 2
+list size = 2
+list size = 2
+list size = 5
+list size = 4
+list size = 7
+list size = 8
+list size = 9
+list size = 3
+list size = 10
+list size = 11
+list size = 12
+list size = 6
+list size = 13
+list size = 14
+ArrayList 的测试结果： 理论上最终的size应该等于15，但是他却是14，说明ArrayList不是线程安全的
+
+vectorrun size = 3
+vectorrun size = 3
+vectorrun size = 3
+vectorrun size = 5
+vectorrun size = 7
+vectorrun size = 8
+vectorrun size = 9
+vectorrun size = 4
+vectorrun size = 6
+vectorrun size = 10
+vectorrun size = 11
+vectorrun size = 12
+vectorrun size = 13
+vectorrun size = 14
+vectorrun size = 15
+Vector的测试结果：和理论上的结果一样，size等于15，可以证明Vector是线程安全的
+```
 
 
 
