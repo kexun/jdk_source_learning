@@ -136,7 +136,7 @@ public E peek() {
     return (f == null) ? null : f.item;
 }
 ```
-
+以上就是LinkedList实现的两种功能，这里包含了大部分关于链表操作的方法，但不仅限于这几种。不管是栈也好，队列也好，元素都是从头部删除的unlinkFirst方法。但是用户在使用的过程中并不只用到上面两张方式，我们也可以从链表尾部删除元素如removeLast，peekLast，pollLast，unlinkLast等方法。
 
 
 
