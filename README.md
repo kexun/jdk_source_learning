@@ -12,3 +12,4 @@ jdk1.8源码学习笔记，人话翻译
 3. [Map](/src/Map.md)
 4. [ArrayList & Vector](/src/ArrayList.md)
 5. [LinkedList](/src/LinkedList.md)
+6. [HashSet](/src/HashSet.md)
