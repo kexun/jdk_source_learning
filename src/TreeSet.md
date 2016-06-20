@@ -64,14 +64,51 @@ public static void TreeSetTest() {
         System.out.println(p.age);
     }
 }
-	
-    
+
 打印结果：
 1
 5
 9
 10
 ```
+
+#####二、NavigableSet接口介绍
+
+```
+// 返回比当前元素小的最近的一个元素
+public E lower(E e) {
+    return m.lowerKey(e);
+}
+
+// 返回小于等于当前元素的最近一个元素
+public E floor(E e) {
+    return m.floorKey(e);
+}
+
+//　返回大于等于当前元素的最近一个元素
+public E ceiling(E e) {
+    return m.ceilingKey(e);
+}
+
+// 返回大于当前元素的最近一个元素
+public E higher(E e) {
+    return m.higherKey(e);
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
