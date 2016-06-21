@@ -14,3 +14,4 @@ jdk1.8源码学习笔记，人话翻译
 5. [LinkedList](/src/LinkedList.md)
 6. [HashSet](/src/HashSet.md)
 7. [TreeSet](/src/TreeSet.md)
+8. [HashMap](/src/HashMap.md)
