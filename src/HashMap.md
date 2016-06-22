@@ -68,6 +68,7 @@ public HashMap(int initialCapacity, float loadFactor) {
     this.threshold = tableSizeFor(initialCapacity);
 }
 
+// HashMap的数组大小是有讲究的，他必须是2的幂，这里通过一个牛逼哄哄的位运算算法，找到大于或等于initialCapacity的最小的2的幂
 static final int tableSizeFor(int cap) {
     int n = cap - 1;
     n |= n >>> 1;
@@ -79,8 +80,22 @@ static final int tableSizeFor(int cap) {
 }
 
 ```
-构造方法中有两个参数，第一个initialCapacity定义map的数组大小，第二个loadFactor意为负载因子，他的作用就是当容器中存储的数据达到loadFactor限度以后，就开始扩容。如果不设定这样参数的话，loadFactor就等于默认值0.75。
-
+构造方法中有两个参数，第一个initialCapacity定义map的数组大小，第二个loadFactor意为负载因子，他的作用就是当容器中存储的数据达到loadFactor限度以后，就开始扩容。如果不设定这样参数的话，loadFactor就等于默认值0.75。但是细心的你会发现，容器创建以后，并没有创建数组，原来table是在第一次被使用的时候才创建的，而这个时候threshold = initialCapacity * loadFactor。 这才是这个容器的真正的负载能力。  
+tableSizeFor这个方法的目的是找到大于或等于initialCapacity的最小的2的幂，这个算法写的非常妙，值得我们细细品味。  
+假设cap=7  
+第一步 n = cap -1 = 6 = 00000110  
+第二步 n|= n>>>1:  
+n>>>1表示无符号右移1位，那么二进制表示为00000011，此时00000110 | 00000011 = 00000111  
+第三步 n|=n>>>2:  
+00000111 & 00000001 = 00000111  
+第四部 n|=n>>>4：  
+00000111 & 00000000 = 00000111  
+第五步 n|=n>>>8;  
+00000111 & 00000000 = 00000111  
+第六步 n|=n>>>16;  
+00000111 & 00000000 = 00000111  
+最后 n + 1 = 00001000  
+其实他的原理很简单，第一步先对cap-1是因为如果cap原本就是一个2的幂，那么最后一步加1，会使得这个值变成原来的两倍，但事实上原来这个cap就是2的幂，就是我们想要的值。接下来后面的几步无符号右移操作是把高位的1补到低位，经过一系列的位运算以后的值必定是000011111...他的低位必定全是1，那么最后一步加1以后，这个值就会成为一个00010000...(2的幂次)，这就是通过cap找到2的幂的方法。看到如此简约高效的算法，我服了。
 
 
 
