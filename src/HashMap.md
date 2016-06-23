@@ -167,9 +167,193 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 ```
 
+#####四、get获取元素
+使用HashMap有一个明显的优点，就是他的存取时间开销基本维持在O(1)，除非在数据量大了以后hash冲突的元素多了以后，对其性能有一定的影响。那么现在介绍的get方法很好的体现了这个优势。  
+```
+public V get(Object key) {
+    Node<K,V> e;
+    return (e = getNode(hash(key), key)) == null ? null : e.value;
+}
 
+// 同一个key的hash值是相同的，通过hash就可以求出数组的下标，便可以在O(1)的时间内获取元素。
+final Node<K,V> getNode(int hash, Object key) {
+    Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+    // 在容器不为空，并且对应位置也存在元素的情况下，那么就要遍历链表，找到相同key值的元素。
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (first = tab[(n - 1) & hash]) != null) {
+        // 如果第一个元素的key值相同，那么这个元素就是我们要找的。
+        if (first.hash == hash &&
+            ((k = first.key) == key || (key != null && key.equals(k))))
+            return first;
+        // 如果第一个元素不是我们要找的，接下来就遍历链表元素，如果遍历完了以后都没找到，说明不存在这个key值
+        if ((e = first.next) != null) {
+            if (first instanceof TreeNode)
+                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+            do {
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null;
+}
+```
 
+#####五、remove删除元素
+删除元素的实现原理和put，get都类似。remove通过给定的key值，找到在hash表中对应的位置，然后找出相同key值的元素，对其删除。  
+```
+public V remove(Object key) {
+    Node<K,V> e;
+    return (e = removeNode(hash(key), key, null, false, true)) == null ?
+        null : e.value;
+}
 
+// 通过key的hash值定位元素位置，并对其删除。这里的实现和put基本相同，我只在不同的地方做一下解释。
+final Node<K,V> removeNode(int hash, Object key, Object value,
+                           boolean matchValue, boolean movable) {
+    Node<K,V>[] tab; Node<K,V> p; int n, index;
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (p = tab[index = (n - 1) & hash]) != null) {
+        Node<K,V> node = null, e; K k; V v;
+        if (p.hash == hash &&
+            ((k = p.key) == key || (key != null && key.equals(k))))
+            node = p;
+        else if ((e = p.next) != null) {
+            if (p instanceof TreeNode)
+                node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
+            else {
+                do {
+                    if (e.hash == hash &&
+                        ((k = e.key) == key ||
+                         (key != null && key.equals(k)))) {
+                        node = e;
+                        break;
+                    }
+                    p = e;
+                } while ((e = e.next) != null);
+            }
+        }
+        
+        // 如果找到了相同的key，接下来就要判断matchValue参数，matchValue如果是true的话，就说明
+        // 需要检查被删除的value是否相同，只有相同的情况下才能删除元素。如果matchValue是false的话
+        // 就不需要判断value是否相同。
+        if (node != null && (!matchValue || (v = node.value) == value ||
+                             (value != null && value.equals(v)))) {
+            if (node instanceof TreeNode)
+                ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
+            else if (node == p)
+                tab[index] = node.next;
+            else
+                p.next = node.next;
+            ++modCount;
+            --size;
+            afterNodeRemoval(node);
+            return node;
+        }
+    }
+    return null;
+}
+
+```
+
+#####六、resize动态扩容
+resize这个方法非常重要，他在添加元素的时候就会被调用到。resize的目的是在容器的容量达到上限的时候，对其扩容，使得元素可以继续被添加进来。这里需要关注两个参数threshold和loadFactor，threshold表示容量的上限，当容器中元素数量大于threshold的时候，就要扩容，并且每次扩容都是原来的两倍。loadFactor表示hash表的数组大小。这两个参数的配合使用可以有效的控制hash冲突数量。  
+```
+final Node<K,V>[] resize() {
+    Node<K,V>[] oldTab = table;
+    int oldCap = (oldTab == null) ? 0 : oldTab.length;
+    int oldThr = threshold;
+    int newCap, newThr = 0;
+    // 如果容器并不是第一次扩容的话，那么oldCap必定会大于0
+    if (oldCap > 0) {
+        if (oldCap >= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return oldTab;
+        }
+        // threshold和数组大小cap共同扩大为原来的两倍
+        else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                 oldCap >= DEFAULT_INITIAL_CAPACITY)
+            newThr = oldThr << 1;
+    }
+    // 第一次扩容，并且设定了threshold值。
+    else if (oldThr > 0)
+        newCap = oldThr;
+    else {
+    	// 如果在创建的时候并没有设置threshold值，那就用默认值
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+    }
+    if (newThr == 0) {
+    	// 第一次扩容的时候threshold = cap * loadFactor
+        float ft = (float)newCap * loadFactor;
+        newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                  (int)ft : Integer.MAX_VALUE);
+    }
+    threshold = newThr;
+    // 创建数组
+    @SuppressWarnings({"rawtypes","unchecked"})
+        Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+    table = newTab;
+    // 如果不是第一次扩容，那么hash表中必然存在数据，需要将这些数据重新hash
+    if (oldTab != null) {
+    	// 遍历所有元素
+        for (int j = 0; j < oldCap; ++j) {
+            Node<K,V> e;
+            if ((e = oldTab[j]) != null) {
+                oldTab[j] = null;
+                if (e.next == null)
+                	// 重新计算在数组中的位置。
+                    newTab[e.hash & (newCap - 1)] = e;
+                else if (e instanceof TreeNode)
+                    ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                else { // preserve order
+                	// 这里分两串，lo表示原先位置的所有，hi表示新的索引
+                    Node<K,V> loHead = null, loTail = null;
+                    Node<K,V> hiHead = null, hiTail = null;
+                    Node<K,V> next;
+                    do {
+                        next = e.next;
+                        // 因为cap都是2的幂次，假设oldCap == 10000，
+                        // 那么e.hash & oldCap == 0 假设为 01010。
+                        // newCap此时为100000，newCap-1=011111。
+                        // 此时e.hash & newCap 任然等于01010，位置不变。
+                        // 如果e.hash 假设为11010，那么 e.hash & oldCap != 0
+                        // 原来的位置为 e.hash & oldCap-1 = 01010
+                        // 新位置 e.hash & newCap-1 = 11010 & 011111 = 11010
+                        // 此时 新位置 != 老位置  新位置=老位置+oldCap
+                        // 因此这里分类两个索引的链表
+                        if ((e.hash & oldCap) == 0) {
+                            if (loTail == null)
+                                loHead = e;
+                            else
+                                loTail.next = e;
+                            loTail = e;
+                        }
+                        else {
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null);
+                    if (loTail != null) {
+                        loTail.next = null;
+                        newTab[j] = loHead;
+                    }
+                    if (hiTail != null) {
+                        hiTail.next = null;
+                        newTab[j + oldCap] = hiHead;
+                    }
+                }
+            }
+        }
+    }
+    return newTab;
+}
+
+```
 
 
 
