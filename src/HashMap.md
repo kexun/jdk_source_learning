@@ -315,7 +315,8 @@ final Node<K,V>[] resize() {
                     do {
                         next = e.next;
                         // 因为cap都是2的幂次，假设oldCap == 10000，
-                        // 那么e.hash & oldCap == 0 假设为 01010。
+                        // 假设e.hash= 01010 那么 e.hash & oldCap == 0。
+                        // 老位置= e.hash & oldCap-1 = 01010 & 01111 = 01010
                         // newCap此时为100000，newCap-1=011111。
                         // 此时e.hash & newCap 任然等于01010，位置不变。
                         // 如果e.hash 假设为11010，那么 e.hash & oldCap != 0
