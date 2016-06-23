@@ -160,7 +160,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
     // 这里判断当前元素的数量是否超过了容量的上限，如果超过了，就要重新进行扩容，并对当前元素重新hash，所以再次扩容以后的元素位置都是会改变的。
     if (++size > threshold)
         resize();
-    // 此方法也是HashMap留给afterNodeInsertion扩招的回调方法。透露一下，因为afterNodeInsertion在插入元素以后，都会维护他的一个双向链表。
+    // 此方法也是HashMap留给LinkedHashMap实现的回调方法。透露一下，因为LinkedHashMap在插入元素以后，都会维护他的一个双向链表
     afterNodeInsertion(evict);
     return null;
 }
