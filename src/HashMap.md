@@ -97,7 +97,75 @@ n>>>1表示无符号右移1位，那么二进制表示为00000011，此时000001
 最后 n + 1 = 00001000  
 其实他的原理很简单，第一步先对cap-1是因为如果cap原本就是一个2的幂，那么最后一步加1，会使得这个值变成原来的两倍，但事实上原来这个cap就是2的幂，就是我们想要的值。接下来后面的几步无符号右移操作是把高位的1补到低位，经过一系列的位运算以后的值必定是000011111...他的低位必定全是1，那么最后一步加1以后，这个值就会成为一个00010000...(2的幂次)，这就是通过cap找到2的幂的方法。看到如此简约高效的算法，我服了。
 
+#####三、put添加元素
+添加一个元素是所有容器中的标配功能，但是至于添加方式那就各有千秋，Map添加元素的方式是通过put，向容器中存入一个Key-Value对。下面我将详细介绍put的实现过程，这个方法非常重要，吃透了这个方法的实现原理，基本也就能搞懂HashMap是怎么一回事了。  
+```
+public V put(K key, V value) {
+    return putVal(hash(key), key, value, false, true);
+}
 
+// 获取key的hash值，这里讲hash值的高16位右移和低16位做异或操作，目的是为了减少hash冲突，使hash值能均匀分布。
+static final int hash(Object key) {
+    int h;
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+               boolean evict) {
+    Node<K,V>[] tab; Node<K,V> p; int n, i;
+    // 如果是第一次添加元素，那么table是空的，首先创建一个指定大小的table。
+    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+    // 通过对hash值取模的方法，确定key对应的数组位置，然后读取该位置中的元素。
+    if ((p = tab[i = (n - 1) & hash]) == null)
+    	// 如果当前位置为空，那么就在当前数组位置，为这个key-value创建一个节点。
+        tab[i] = newNode(hash, key, value, null);
+    else {
+    	// 如果当前位置已经存在元素，那么就要逐个读取这条链表的元素。
+        Node<K,V> e; K k;
+        // 如果key和hash值都等于当前头元素，那么这存放的两个元素是相同的。
+        if (p.hash == hash &&
+            ((k = p.key) == key || (key != null && key.equals(k))))
+            e = p;
+        // 如果当前位置的链表类型是TreeNode，那么就讲当前元素以红黑树的形式存放。
+        else if (p instanceof TreeNode)
+            e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+        else {
+            for (int binCount = 0; ; ++binCount) {
+            	// 遍历链表的所有元素，如果都未找到相同key的元素，那么说明这个元素并不在容器中存在，因此将他添加到链表尾部，并结束遍历。
+                if ((e = p.next) == null) {
+                    p.next = newNode(hash, key, value, null);
+                    if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                        treeifyBin(tab, hash);
+                    break;
+                }
+                // 如果在遍历过程中，发现了相同的key值，那么就结束遍历。
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    break;
+                p = e;
+            }
+        }
+        // 如果e != null 说明在当前容器中，存在一个相同的key值，那么就要替换key所对应的value
+        if (e != null) {
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null)
+                e.value = value;
+            // 这是专门留给LinkedHashMap调用的回调函数，LinkedHashMap会实现这个方法。从这里可以看出，HashMap充分的考虑了他的扩展性。
+            afterNodeAccess(e);
+            return oldValue;
+        }
+    }
+    ++modCount;
+    // 这里判断当前元素的数量是否超过了容量的上限，如果超过了，就要重新进行扩容，并对当前元素重新hash，所以再次扩容以后的元素位置都是会改变的。
+    if (++size > threshold)
+        resize();
+    // 此方法也是HashMap留给afterNodeInsertion扩招的回调方法。透露一下，因为afterNodeInsertion在插入元素以后，都会维护他的一个双向链表。
+    afterNodeInsertion(evict);
+    return null;
+}
+
+```
 
 
 
