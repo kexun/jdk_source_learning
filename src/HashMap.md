@@ -116,7 +116,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
     // 如果是第一次添加元素，那么table是空的，首先创建一个指定大小的table。
     if ((tab = table) == null || (n = tab.length) == 0)
         n = (tab = resize()).length;
-    // 通过对hash值取模的方法，确定key对应的数组位置，然后读取该位置中的元素。
+    // 通过对hash与数组长度的与操作，确定key对应的数组位置，然后读取该位置中的元素。
     if ((p = tab[i = (n - 1) & hash]) == null)
     	// 如果当前位置为空，那么就在当前数组位置，为这个key-value创建一个节点。
         tab[i] = newNode(hash, key, value, null);
