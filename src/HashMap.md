@@ -356,6 +356,117 @@ final Node<K,V>[] resize() {
 
 ```
 
+#####七、遍历
+HashMap遍历有三种方式，一种是对key遍历，还有一种是对entry遍历和对value遍历。这三种遍历方式都是基于对HashIterator的封装，三种实现方式大同小异，因此我着重介绍EntryIterator的实现。  
+
+
+```
+// 对HashMap元素进行遍历。
+public Set<Map.Entry<K,V>> entrySet() {
+    Set<Map.Entry<K,V>> es;
+    // 第一次遍历的时候，实例化entrySet。
+    return (es = entrySet) == null ? (entrySet = new EntrySet()) : es;
+}
+
+final class EntrySet extends AbstractSet<Map.Entry<K,V>> {
+    public final int size()                 { return size; }
+    public final void clear()               { HashMap.this.clear(); }
+    public final Iterator<Map.Entry<K,V>> iterator() {
+        return new EntryIterator();
+    }
+    public final boolean contains(Object o) {
+        if (!(o instanceof Map.Entry))
+            return false;
+        Map.Entry<?,?> e = (Map.Entry<?,?>) o;
+        Object key = e.getKey();
+        Node<K,V> candidate = getNode(hash(key), key);
+        return candidate != null && candidate.equals(e);
+    }
+    public final boolean remove(Object o) {
+        if (o instanceof Map.Entry) {
+            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
+            Object key = e.getKey();
+            Object value = e.getValue();
+            return removeNode(hash(key), key, value, true, true) != null;
+        }
+        return false;
+    }
+    public final Spliterator<Map.Entry<K,V>> spliterator() {
+        return new EntrySpliterator<>(HashMap.this, 0, -1, 0, 0);
+    }
+    public final void forEach(Consumer<? super Map.Entry<K,V>> action) {
+        Node<K,V>[] tab;
+        if (action == null)
+            throw new NullPointerException();
+        if (size > 0 && (tab = table) != null) {
+            int mc = modCount;
+            for (int i = 0; i < tab.length; ++i) {
+                for (Node<K,V> e = tab[i]; e != null; e = e.next)
+                    action.accept(e);
+            }
+            if (modCount != mc)
+                throw new ConcurrentModificationException();
+        }
+    }
+}
+
+final class EntryIterator extends HashIterator
+    implements Iterator<Map.Entry<K,V>> {
+    public final Map.Entry<K,V> next() { return nextNode(); }
+}
+
+// HashMap自己实现的遍历方法。上面的所有方法都是围绕这个类展开的。下面具体讲解这个类的实现原理。
+abstract class HashIterator {
+    Node<K,V> next;        // 指向下一个元素
+    Node<K,V> current;     // 指向当前元素
+    int expectedModCount;
+    int index;             // 当前元素位置
+
+    HashIterator() {
+        expectedModCount = modCount;
+        Node<K,V>[] t = table;
+        current = next = null;
+        index = 0;
+        if (t != null && size > 0) { // 找到table中的第一个元素
+            do {} while (index < t.length && (next = t[index++]) == null);
+        }
+    }
+
+    public final boolean hasNext() {
+        return next != null;
+    }
+
+    final Node<K,V> nextNode() {
+        Node<K,V>[] t;
+        Node<K,V> e = next;
+        if (modCount != expectedModCount)
+            throw new ConcurrentModificationException();
+        if (e == null)
+            throw new NoSuchElementException();
+        // 判断当前元素是否为链表中的最后一个元素，如果在链表尾部，那么就需要重新遍历table，
+        // 顺序找到下元素的位置。
+        if ((next = (current = e).next) == null && (t = table) != null) {
+            do {} while (index < t.length && (next = t[index++]) == null);
+        }
+        return e;
+    }
+
+	// 删除当前遍历的元素。
+    public final void remove() {
+        Node<K,V> p = current;
+        if (p == null)
+            throw new IllegalStateException();
+        if (modCount != expectedModCount)
+            throw new ConcurrentModificationException();
+        current = null;
+        K key = p.key;
+        removeNode(hash(key), key, null, false, false);
+        expectedModCount = modCount;
+    }
+}
+```
+
+总结一下这个遍历的过程是 EntrySet -> EntryIterator -> HashIterator。同理对key的遍历过程就是 KeySet -> KeyIterator -> HashIterator。可以看出来不管是哪种遍历，最终都是调用了HashIterator。
 
 
 
