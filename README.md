@@ -16,3 +16,4 @@ jdk1.8源码学习笔记，人话翻译
 7. [TreeSet](/src/TreeSet.md)
 8. [HashMap](/src/HashMap.md)
 9. [LinkedHashMap](/src/LinkedHashMap.md)
+10. [WeakHashMap](/src/WeakHashMap.md)
