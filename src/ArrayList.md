@@ -1,11 +1,12 @@
-#ArrayList & Vector
+# ArrayList & Vector
 
-#####前言:
-本来按照计划，ArrayList和Vector是分开讲的，但是当我阅读了ArrayList和Vector的源码以后，我就改变了注意，把两个类合起来讲或许更加适合。为什么呢？我有几个理由。  
+##### 前言:
+本来按照计划，ArrayList和Vector是分开讲的，但是当我阅读了ArrayList和Vector的源码以后，我就改变了注意，把两个类合起来讲或许更加适合。为什么呢？我有几个理由。
+
 1. ArrayList和Vector都是List的实现类，他两处于同一个地位上的。他们所实现的功能大同小异，源码相似度90%以上。  
 2. 他俩的区别，ArrayList是非线程安全，而Vector是线程安全的，那么表现在源码上是怎么样的区别呢？就是在每个ArrayList的方法前，加上synchronized。哈哈，不相信？直接上代码  
 
-```
+```java
 // Vector的add方法
 public synchronized boolean add(E e) {
     modCount++;
@@ -24,13 +25,13 @@ public boolean add(E e) {
 3.他俩都实现了Iterator和LinkIterator接口，具有相同的遍历方式。  
 4.ArrayList和Vector都具有动态扩容的特性，唯一的区别是，ArrayList扩容后是原来的1.5倍。Vector中有一个capacityIncrement变量，每次扩容都在原来大小基础上增加capacityIncrement。如果capacityIncrement==0，那么就在原大小基础上再扩充一倍。  
 5.Vector中有一个方法setSize(int newSize)，而ArrayList并没有，我觉得这个方法有点鸡肋。setSize允许用户主动设置容器大小，如果newSize小于当前size，那么elementData数组中只会保留newSize个元素，多出来的会设为null。如果newSize大于当前size，那么就扩容到newSize大小，数组中多出来的部分设为null，以后添加元素的时候，之前多出来的部分就会以null的形式存在，直接试验一下吧  
-```
+```java
 Vector<Integer> v2 = new Vector<Integer>();
     v2.add(1);
     v2.setSize(3);
     v2.add(3);
     System.out.println(v2.size());
-    
+
     setSize之前：
     [1]
     setSize之后：
@@ -38,16 +39,16 @@ Vector<Integer> v2 = new Vector<Integer>();
     当我再次添加一个元素后：
     [1, null, null, 3]
     所以我觉得这个方法并没有太大实用意义。而且会是用户困惑，出现一些不必要的错误。
-    
+
 ```
 6.因为Vector是同步的，所以性能上肯定不如ArrayList，所以在不需要考虑多线程的环境下，建议使用ArrayList。  
 
 既然上面我讲了这么多Vector和ArrayList的异同点，而且两个类的实现基本一致，那么下面我就已ArrayList为例子来进行讲解，Vector部分就不再赘述。
 ArrayList是List的实现类，可以说是最重用的一个容器之一。他之所以被频繁的使用，必然有其优势之处。下面就来讲讲ArrayList的几个优点：
 
-#####一、 动态扩容
+##### 一、 动态扩容
 首先来谈谈ArrayList的数据是如何存储的，他的底层其实就是封装了一个Array数组，数组的类型为Object。  
-```
+```java
     private static final int DEFAULT_CAPACITY = 10;
 
     private static final Object[] EMPTY_ELEMENTDATA = {};
@@ -57,9 +58,9 @@ ArrayList是List的实现类，可以说是最重用的一个容器之一。他�
     private int size;
 ```
    从这段定义中可以看出，ArrayList维护了两个数组DEFAULT_CAPACITY和elementData。DEFAULT_CAPACITY是一个空数组，当创建一个空的ArrayList的时候就会使用DEFAULT_CAPACITY，这个时候elementData==DEFAULT_CAPACITY，当在容器中添加一个元素以后，则会使用elementData来存储数据。  
-   
+
    这里值得讨论的是DEFAULT_CAPACITY常量,他代表的含义是一个默认数组大小，当我们创建的容器没用指定容量大小时，就会默认使用这个常量作为数组大小。因此当我们创建一个ArrayList实例的时候，最好考虑一下业务场景，如果我们将频繁的存储大量的元素，那么最好在创建的时候指定一个合理的size。所谓动态扩容，就是当数组中存储的元素达到容量上限以后，ArrayList会创建一个新的数组，新数组的大小为当前数组大小的1.5倍。随后将数组元素拷贝到新数组，如果这个动作频繁执行的话，会增大性能开销。  
-```
+```java
     public ArrayList(int initialCapacity) {
         super();
         if (initialCapacity < 0)
@@ -83,7 +84,7 @@ ArrayList是List的实现类，可以说是最重用的一个容器之一。他�
 ```
 这三个方法都是ArrayList的构造方法，从前两个方法中可以看出初始化ArrayList的时候是如何指定容器初始大小的，这里也无需多言了。那么我们再看看，当容量达到上限的时候，是如何动态扩充数组大小的呢。  
 
-```
+```java
 public boolean add(E e) {
     // 每次添加元素之前先动态调整数组大小，避免溢出
     ensureCapacityInternal(size + 1);
@@ -134,9 +135,9 @@ private static int hugeCapacity(int minCapacity) {
 ```
 以上就是ArrayList实现动态扩容的原理。那么我有一个问题，当容器满了以后需要扩容，那当容器元素不足1/2或者更少的时候是否需要动态减容呢？
 
-#####验证：
+##### 验证：
 下面写了若干测试代码，分别给出了3中情况，创建的时候设定容器大小和使用默认大小，然后通过逐个增加元素，观察数组大小变化。
-```
+```java
 List<Integer> list1 = new ArrayList<Integer>(1);
     list1.add(1);
     list1.add(2);
@@ -149,7 +150,7 @@ List<Integer> list1 = new ArrayList<Integer>(1);
         list3.add(i);
     }
     list3.add(22);
-    
+
     for (int i = 11; i > 0; i--) {
         list3.remove(i);
     }
@@ -171,11 +172,11 @@ List<Integer> list1 = new ArrayList<Integer>(1);
 ![](/img/7.png)![]  
 (/img/8.png)  
 
-#####二、添加元素
+##### 二、添加元素
 其实ArrayList的add，set方法都非常简单。一句话概括，就是对数组元素的操作。  
 
 1.add方法：  
-```
+```java
 public boolean add(E e) {
 	// 检查扩容
     ensureCapacityInternal(size + 1);
@@ -222,7 +223,7 @@ public boolean addAll(int index, Collection<? extends E> c) {
 这里给出了四种add方法，add(E e)添加到数组末尾，add(int index, E element)添加到指定位置。添加元素的时候，首先都要检查扩容，而add(int index, E element)方法中多一步操作，就是将指定位置以后的所有元素向后移动一位，留出当前位置用来存放添加的元素。后面两种addAll方法原理和前两种一样，无非他是添加一个集合元素的区别。  
 
 2.set方法：  
-```
+```java
 public E set(int index, E element) {
     rangeCheck(index);
     E oldValue = elementData(index);
@@ -232,11 +233,11 @@ public E set(int index, E element) {
 ```
 set和add的区别就是，add是添加一个元素，而set是替换元素，size不变。
 
-#####三、删除元素
+##### 三、删除元素
 remove方法和add方法类似，也是对数组的一系列组合操作。删除也分为对单个元素的删除和集合删除。下面就分别来看看这两类方法的具体实现。  
 
 1.remove单个元素：  
-```
+```java
 public E remove(int index) {
     rangeCheck(index);
     modCount++;
@@ -280,7 +281,7 @@ private void fastRemove(int index) {
 ```
 2.删除集合元素  
 removeAll和remove方法思想也是类似的，但是这里有个细节我认为作者处理的非常妙，有必要拿出来品味一下。那么妙在哪里呢？原来这里有两个方法removeAll和retainAll他们正好是互斥的两个操作，但是底层都调用了同一个方法来实现，请看！  
-```
+```java
 // 删除包含集合C的元素
 public boolean removeAll(Collection<?> c) {
     Objects.requireNonNull(c);
@@ -326,12 +327,12 @@ private boolean batchRemove(Collection<?> c, boolean complement) {
 }
 ```
 当我读到这段代码的时候，我忍不住赞叹，代码之美，美在逻辑的严谨，美在逻辑的简约，也终于明白了，何为对称美。
-#####四、迭代器
+##### 四、迭代器
 在java集合类中，所有的集合都实现了Iterator接口，而List接口同时实现了ListIterator接口，这就决定了ArrayList他同时拥有两种迭代遍历的基因--Itr和ListItr。  
 
 1.Itr  
 Itr实现的是Iterator接口，拥有对元素向后遍历的能力
-```
+```java
 int cursor;       // 指向下一个返回的元素
 int lastRet = -1; // 指向在遍历过程中，最后返回的那个元素。 如果没有为-1。
 
@@ -368,7 +369,7 @@ public void remove() {
 
 2.ListItr  
 ListItr不但继承了Itr类，也实现了ListIterator接口，因此他拥有双向遍历的能力。这里着重介绍一下向前遍历的原理。  
-```
+```java
 public boolean hasPrevious() {
     return cursor != 0;
 }
@@ -391,7 +392,7 @@ public E previous() {
 }
 ```
 ListItr同时增加了set和add两个方法  
-```
+```java
 // 替换当前遍历到的元素
 public void set(E e) {
     if (lastRet < 0)
@@ -420,15 +421,15 @@ public void add(E e) {
     }
 }
 ```
-#####五、子集操作
-```
+##### 五、子集操作
+```java
 public List<E> subList(int fromIndex, int toIndex) {
     subListRangeCheck(fromIndex, toIndex, size);
     return new SubList(this, 0, fromIndex, toIndex);
 }
 ```
 这里指的子集，就是指定list的起始位置和结束位置，获取这段范围内的集合元素。那么这有什么作用呢？当单独获取了这段子集以后，就可以独立的对待他，他的起始元素将从0开始。那么这是怎么实现的呢？原来他是通过维护一个SubList内部类，每次读取元素的时候，配合一个offset偏移量，精确的找到elementData数组中对应位置的元素了。由于代码量过多，我这里就象征性的展示其中的一个get方法。  
-```
+```java
 public E get(int index) {
     rangeCheck(index);
     checkForComodification();
@@ -437,9 +438,9 @@ public E get(int index) {
 }
 ```
 
-#####六、ArrayList和Vector在多线程环境下对比。
+##### 六、ArrayList和Vector在多线程环境下对比。
 1.测试代码  
-```
+```java
 public static void ArrayListVectorTest() {
     final List<Integer> list = new ArrayList<Integer>(11);
 
@@ -478,7 +479,7 @@ public static void ArrayListVectorTest() {
 }
 ```
 
-```
+```java
 list size = 2
 list size = 2
 list size = 2
@@ -513,7 +514,3 @@ vectorrun size = 14
 vectorrun size = 15
 Vector的测试结果：和理论上的结果一样，size等于15，可以证明Vector是线程安全的
 ```
-
-
-
-

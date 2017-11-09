@@ -1,10 +1,10 @@
-#WeakHashMap
+# WeakHashMap
 
 前言：  
 WeakHashMap这个类我看了好久，一直不知道怎么写，有两点原因。第一：我怕把他写简单了，光从WeakHashMap的功能实现是描述，他和HashMap等非常的相似，无非也是用来hash表+单向链表的结构作为底层数据存储，再写一遍没太大意思。 第二：WeakHashMap的特点是以一种弱引用的关系存储数据，存储对象长期不用，可以被垃圾回收。讲这部分内容非常有意思，但是关于jvm部分了解不深，又怕讲不好。因此托了很长时间没写。  
 权衡以后，决定先讲解WeakHashMap弱引用的实现原理，垃圾回收部分先缓一缓。  
 
-#####一、与HashMap异同
+##### 一、与HashMap异同
 WeakHashMap的实现和HashMap非常类似，他们有相同的数据结构，类似的存储机制。数据底层都是通过hash表+单向链表的结构存储数据。  
 1.get  
 获取元素的流程非常类似，首先对key进行hash处理，通过hash值寻找到对应的元素位置。数组元素保存的是单向链表，这是hash冲突导致的结果。然后元每个entry对比key值是否相同，最终找到对应的元素。  
@@ -14,7 +14,7 @@ WeakHashMap的实现和HashMap非常类似，他们有相同的数据结构，�
 
 3.getTable  
 getTable方法是WeakHashMap特有的，这个方法是干什么用的呢？因为我们知道WeakHashMap的元素是通过弱引用的关系存储的。在容器中，有部分元素长时间未用，会被垃圾回收，getTable的作用就是清除被垃圾回收的元素。源码如下：  
-```
+```java
 private Entry<K,V>[] getTable() {
     expungeStaleEntries();
     return table;
@@ -55,7 +55,7 @@ private void expungeStaleEntries() {
 WeakHashMap的Entry是Reference的子类。Entry实例化时会引用当前的queue，如果当前Entry被垃圾回收后，会将key注册的queue中。在后文中我会详细介绍Reference类。  
 
 Entry结构  
-```
+```java
 private static class Entry<K,V> extends WeakReference<Object> implements Map.Entry<K,V> {
     V value;
     final int hash;
@@ -73,10 +73,10 @@ private static class Entry<K,V> extends WeakReference<Object> implements Map.Ent
     ......
 }
 ```
-##### 二、弱键引用
+#####  二、弱键引用
 上文简单介绍了WeakHashMap和HashMap的异同点，大同小异，不想过多重复。我认为WeakHashMap的重点是对元素进行垃圾回收的部分。下面将结合源码进行讲解。  
 
-```
+```java
 public abstract class Reference<T> {
 
  	private T referent;
@@ -155,18 +155,18 @@ Reference的实现原理：
 4.当消费者消费完结束以后，阻塞消费，通知生产者生产。  
 
 
-```
+```java
 public class ProducerCustomerDemo {
 
 	private static int index = 0;
-	
+
 	private static int size = 0;
-	
+
 	static private class Lock { };
     private static Lock lock = new Lock();
-	
+
 	private static Entry head = null;
-	
+
 	public synchronized int getSize() {
 		return size;
 	}
@@ -174,25 +174,25 @@ public class ProducerCustomerDemo {
 	public synchronized void addSize() {
 		ProducerCustomerDemo.size++;
 	}
-	
+
 	public synchronized void minusSize() {
 		ProducerCustomerDemo.size--;
 	}
-	
+
 	public synchronized int getIndex() {
 		return index;
 	}
-	
+
 	public synchronized void addIndex() {
 		index++;
 	}
-	
+
 	public synchronized void minusIndex() {
 		index--;
 	}
-	
+
 	public static void main(String[] args) {
-		
+
 		new Thread(new ProducerCustomerDemo().new Consumer("aaa")).start();
 		new Thread(new ProducerCustomerDemo().new Consumer("bbb")).start();
 		new Thread(new ProducerCustomerDemo().new Consumer("ccc")).start();
@@ -200,26 +200,26 @@ public class ProducerCustomerDemo {
 		new Thread(new ProducerCustomerDemo().new Producer("张三")).start();
 		new Thread(new ProducerCustomerDemo().new Producer("李四")).start();
 	}
-	
+
 	class Entry {
 		Entry next;
 		int value;
-		
+
 		public Entry(int value) {
 			this.value = value;
 		}
 	}
-	
+
 	class Consumer implements Runnable{
 
 		private String name;
-		
+
 		public Consumer(String name) {
 			this.name = name;
 		}
 		@Override
 		public void run() {
-			
+
 			for (;;) {
 				Entry temp = null;
 				synchronized (lock) {
@@ -245,17 +245,17 @@ public class ProducerCustomerDemo {
 				}
 			}
 		}
-		
+
 	}
-	
+
 	class Producer implements Runnable {
 
 		private String name;
-		
+
 		public Producer(String name) {
 			this.name = name;
 		}
-		
+
 		@Override
 		public void run() {
 
@@ -285,6 +285,6 @@ public class ProducerCustomerDemo {
 			}
 		}
 	}
-		
+
 }
 ```

@@ -1,14 +1,14 @@
-#LinkedList
+# LinkedList
 
-#####前言：
+##### 前言：
 本文将介绍List家族中的另一个重要的实现类，他的实现有别与ArrayList和Vector，虽说List的所有类都是线性存储结构，但前者是通过数组存储的顺序结构，而本次要讲的LinkedList是通过链表的形式存放数据。当然，LinkedList也是非线程安全的，如果要在多线程环境下使用他，需要做一些额外的努力。  
 LinkedList分别实现了List接口和Deque接口，通过这种杂交方式，使他具有了独特的有别于ArrayList的特异功能。那么这也是本文着重要讲解的地方，而与ArrayList类似的部分就弱化讲解了。
 
-#####一、双向链表
+##### 一、双向链表
 ArrayList是通过数组实现存储，而LinkedList则是通过链表来存储数据，而且他实现的是一个双向链表，简单的说一下什么是双向链表。双向链表是数据结构的一种形式，他的每个节点维护两个指针，prev指向上一个节点，next指向下一个节点。这种结构有什么特点呢？他可以实现双向遍历，这使得在链表中的数据读取变得非常灵活自由。同时，LinkedList中维护了两个指针，一个指向头部，一个指向尾部。维护这两个指针后，可以使得元素从头部插入，也可以使元素从尾部插入。基于方式，用户很容易就能实现FIFO(队列)，LIFO(栈)等效果。那么下面我们来看一下源码中的具体实现。  
 
 1.Node节点定义：  
-```
+```java
 private static class Node<E> {
     E item;
     Node<E> next;
@@ -23,7 +23,7 @@ private static class Node<E> {
 ```
 2.FIFO(队列)实现原理：  
 队列的原理就是每次都从链表尾部添加元素，从链表头部获取元素，就像生活中的排队叫号，总是有个先来后到。  
-```
+```java
 
 // 队列尾部添加一个元素，建议使用这个，约定俗成吧。
 public boolean offer(E e) {
@@ -88,7 +88,7 @@ public E peek() {
 
 3.LIFO(栈)实现原理：  
 栈的原理是每次从头部添加元素，也从头部获取元素，那么后进入的元素反而最先出来。就像我们平时叠盘子，洗好了就一个一个往上放，然后要用了就从上往下一个一个拿。  
-```
+```java
 // 在链表的头部添加一个元素
 public void push(E e) {
     addFirst(e);
@@ -141,11 +141,11 @@ public E peek() {
 ```
 以上就是LinkedList实现的两种功能，这里包含了大部分关于链表操作的方法，但不仅限于这几种。不管是栈也好，队列也好，元素都是从头部删除的unlinkFirst方法。但是用户在使用的过程中并不只用到上面两张方式，我们也可以从链表尾部删除元素如removeLast，peekLast，pollLast，unlinkLast等方法。
 
-#####二、存取操作
+##### 二、存取操作
 上文讲到的功能，其实是实现了Deque接口，而现在要讲述的是实现与List的部分功能。那么最典型的操作就是直接对容器元素的读取，因为List容器的一大特点就是顺序存储，元素在容器中的位置和存入时是保持一致的，那么用户在读取元素的时候理所当然就可以通过元素下标来获取，下面就具体介绍这几种方法。  
 
 1.将元素插入容器的指定位置  
-```
+```java
 // 将元素插入指定位置
 public void add(int index, E element) {
     checkPositionIndex(index);
@@ -175,7 +175,7 @@ void linkBefore(E e, Node<E> succ) {
 ```
 
 2.获取指定位置元素  
-```
+```java
 public E get(int index) {
     checkElementIndex(index);
     return node(index).item;
@@ -201,19 +201,19 @@ Node<E> node(int index) {
 
 
 ```
-#####三、迭代器实现
+##### 三、迭代器实现
 LinkedList的迭代器实现有两个，一个是实现了Iterator接口的DescendingIterator，另一个则是实现了ListIterator接口的ListItr。  
 
 1.ListItr  
 ListItr遍历需要指定一个起始值  
-```
+```java
 public ListIterator<E> listIterator(int index) {
     checkPositionIndex(index);
     return new ListItr(index);
 }
 ```
 ListItr会创建一个以index为起始值的迭代器，然后用户便可以以这个位置为起点，实现向前或者向后遍历。  
-```
+```java
 ListItr(int index) {
     // 实例化的时候，将next指针指向指定位置的元素
     next = (index == size) ? null : node(index);
@@ -247,7 +247,7 @@ public E previous() {
 
 2.DescendingIterator  
 DescendingIterator迭代器实现的是对链表从尾部向头部遍历的功能，他复用里ListItr中的previous方法，将当前位置指向链表尾部，然后逐个向前遍历。  
-```
+```java
 private class DescendingIterator implements Iterator<E> {
     private final ListItr itr = new ListItr(size());
     public boolean hasNext() {
@@ -261,17 +261,3 @@ private class DescendingIterator implements Iterator<E> {
     }
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
