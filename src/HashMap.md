@@ -1,14 +1,14 @@
-#HashMap
-#####前言：
+# HashMap
+##### 前言：
 从今天开始我将介绍Map系列接口，我认为Map是集合类中概念最多，实现最复杂的一类接口。在讲解过程中会涉及到不少数据结构的知识，这部分知识点需要读者额外花一定时间系统学习。  
 
 HashMap是Map的一个实现类，这个类很重要，是很多集合类的实现基础，底层用的就是他，比如前文中讲到的HashSet，下文要讲到的LinkedHashMap。我们可以将HashMap看成是一个小型的数字字典，他以key-value的方式保存数据，Key全局唯一，并且key和value都允许为null。  
 
 HashMap底层是通过维护一个数据来保存元素。当创建HashMap实例的时候，会通过指定的数组大小以及负载因子等参数创建一个空的数组，当在容器中添加元素的时候，首先会通过hash算法求得key的hash值，再根据hash值确定元素在数组中对应的位置，最后将元素放入数组对应的位置。在添加元素的过程中会出现hash冲突问题，冲突处理的方法就是判断key值是否相同，如果相同则表明是同一个元素，替换value值。如果key值不同，则把当前元素添加到链表尾部。这里引出了一个概念，就是HashMap的数据结构其实是：hash表+单向链表。通过链表的方式把所有冲突元素放在了数组的同一个位置。但是当链表过长的时候会影响HashMap的存取效率。因此我们在实际使用HashMap的时候就需要考虑到这个问题，那么该如何控制hash冲突的出现频率呢？HashMap中有一个负载因子(loadFactor)的概念。容器中实际存储元素的size = loadFactor * 数组长度，一旦容器元素超出了这个size，HashMap就会自动扩容，并对所有元素重新执行hash操作，调整位置。好了说了这么多，下面就开始介绍源码实现。  
 
-#####一、Node结构介绍
+##### 一、Node结构介绍
 Node类实现了Map.Entry接口，他是用于存放数据的实体，是容器中存放数据的最小单元。Node的数据结构是一个单向链表，为什么选用这种结构？那是因前文讲到的，HashMap存放数据的结构是：hash表+单向链表。下面给出定义Node的源码：  
-```
+```java
 static class Node<K,V> implements Map.Entry<K,V> {
     final int hash;
     final K key;
@@ -52,9 +52,9 @@ static class Node<K,V> implements Map.Entry<K,V> {
 ```
 这个结构非常简单，定义了一个hash和key，hash值是对key进行hash以后得到的。value保存实际要存储的对象。next指向下一个节点。当hash冲突以后，就会将冲突的元素放入这个单向链表中。  
 
-#####二、创建HashMap
+##### 二、创建HashMap
 创建HashMap实例有四个构造方法，这里着重介绍一个，看源码：  
-```
+```java
 public HashMap(int initialCapacity, float loadFactor) {
     if (initialCapacity < 0)
         throw new IllegalArgumentException("Illegal initial capacity: " +
@@ -97,9 +97,9 @@ n>>>1表示无符号右移1位，那么二进制表示为00000011，此时000001
 最后 n + 1 = 00001000  
 其实他的原理很简单，第一步先对cap-1是因为如果cap原本就是一个2的幂，那么最后一步加1，会使得这个值变成原来的两倍，但事实上原来这个cap就是2的幂，就是我们想要的值。接下来后面的几步无符号右移操作是把高位的1补到低位，经过一系列的位运算以后的值必定是000011111...他的低位必定全是1，那么最后一步加1以后，这个值就会成为一个00010000...(2的幂次)，这就是通过cap找到2的幂的方法。看到如此简约高效的算法，我服了。
 
-#####三、put添加元素
+##### 三、put添加元素
 添加一个元素是所有容器中的标配功能，但是至于添加方式那就各有千秋，Map添加元素的方式是通过put，向容器中存入一个Key-Value对。下面我将详细介绍put的实现过程，这个方法非常重要，吃透了这个方法的实现原理，基本也就能搞懂HashMap是怎么一回事了。  
-```
+```java
 public V put(K key, V value) {
     return putVal(hash(key), key, value, false, true);
 }
@@ -167,9 +167,9 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 ```
 
-#####四、get获取元素
+##### 四、get获取元素
 使用HashMap有一个明显的优点，就是他的存取时间开销基本维持在O(1)，除非在数据量大了以后hash冲突的元素多了以后，对其性能有一定的影响。那么现在介绍的get方法很好的体现了这个优势。  
-```
+```java
 public V get(Object key) {
     Node<K,V> e;
     return (e = getNode(hash(key), key)) == null ? null : e.value;
@@ -200,9 +200,9 @@ final Node<K,V> getNode(int hash, Object key) {
 }
 ```
 
-#####五、remove删除元素
+##### 五、remove删除元素
 删除元素的实现原理和put，get都类似。remove通过给定的key值，找到在hash表中对应的位置，然后找出相同key值的元素，对其删除。  
-```
+```java
 public V remove(Object key) {
     Node<K,V> e;
     return (e = removeNode(hash(key), key, null, false, true)) == null ?
@@ -234,7 +234,7 @@ final Node<K,V> removeNode(int hash, Object key, Object value,
                 } while ((e = e.next) != null);
             }
         }
-        
+
         // 如果找到了相同的key，接下来就要判断matchValue参数，matchValue如果是true的话，就说明
         // 需要检查被删除的value是否相同，只有相同的情况下才能删除元素。如果matchValue是false的话
         // 就不需要判断value是否相同。
@@ -257,9 +257,9 @@ final Node<K,V> removeNode(int hash, Object key, Object value,
 
 ```
 
-#####六、resize动态扩容
+##### 六、resize动态扩容
 resize这个方法非常重要，他在添加元素的时候就会被调用到。resize的目的是在容器的容量达到上限的时候，对其扩容，使得元素可以继续被添加进来。这里需要关注两个参数threshold和loadFactor，threshold表示容量的上限，当容器中元素数量大于threshold的时候，就要扩容，并且每次扩容都是原来的两倍。loadFactor表示hash表的数组大小。这两个参数的配合使用可以有效的控制hash冲突数量。  
-```
+```java
 final Node<K,V>[] resize() {
     Node<K,V>[] oldTab = table;
     int oldCap = (oldTab == null) ? 0 : oldTab.length;
@@ -356,11 +356,11 @@ final Node<K,V>[] resize() {
 
 ```
 
-#####七、遍历
+##### 七、遍历
 HashMap遍历有三种方式，一种是对key遍历，还有一种是对entry遍历和对value遍历。这三种遍历方式都是基于对HashIterator的封装，三种实现方式大同小异，因此我着重介绍EntryIterator的实现。  
 
 
-```
+```java
 // 对HashMap元素进行遍历。
 public Set<Map.Entry<K,V>> entrySet() {
     Set<Map.Entry<K,V>> es;
@@ -467,12 +467,3 @@ abstract class HashIterator {
 ```
 
 总结一下这个遍历的过程是 EntrySet -> EntryIterator -> HashIterator。同理对key的遍历过程就是 KeySet -> KeyIterator -> HashIterator。可以看出来不管是哪种遍历，最终都是调用了HashIterator。
-
-
-
-
-
-
-
-
-
